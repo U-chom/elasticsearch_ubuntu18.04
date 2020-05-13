@@ -8,7 +8,7 @@ ENV USER "amano"
 ENV HOME /home/${USER}
 ENV DEBCONF_NOWARNINGS yes
 ENV SHELL /usr/bin/zsh
-ENV UBUNTU_CONTAINER_NAME ubuntu18.04
+ENV UBUNTU_CONTAINER_NAME ubuntu18.04_02
 
 # 設定ファイルをコピー
 ## python
@@ -18,13 +18,18 @@ COPY ./python3/library/library.txt /
 RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list
 
 RUN set -x \
-&&  apt-get update \
+&&  apt-get update -y\
 &&  apt upgrade -y --no-install-recommends\
 &&  apt-get install -y --no-install-recommends \
                 sudo \
-                zsh \
+		zsh \
                 vim \
                 git \
+		wget \
+		curl \
+		build-essential \
+		gcc \
+		libboost-dev \
                 ## python3 
                 python3 \
                 python3-pip \
@@ -34,6 +39,7 @@ RUN set -x \
                 ## japanese
                 language-pack-ja-base \
                 language-pack-ja \
+
 # python3 → python
 &&  ln -s /usr/bin/python3 /usr/bin/python \
 # pip3 → pip
@@ -48,26 +54,44 @@ RUN set -x \
 ## 一般ユーザーにsudo権限を付与
 &&  gpasswd -a ${USER} sudo \
 ## 一般ユーザーのパスワード設定
-&&  echo "${USER}:amano" | chpasswd \
+&&  echo "${USER}:0000" | chpasswd \
 ## sudo passを無くす
 &&  echo "${USER} ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/$USER \
 # Pythonのライブラリ追加
 &&  python3 -m pip --no-cache-dir install --upgrade pip \
 &&  pip3 --no-cache-dir install -I setuptools \
-&&  python3 -m pip --no-cache-dir install --upgrade tensorflow nodejs elasticsearch \
+&&  python3 -m pip --no-cache-dir install --upgrade tensorflow nodejs elasticsearch six pyknp \
 &&  pip3 --no-cache-dir install -Ir /library.txt \
 &&  rm -rf /library.txt
 
-RUN jupyter notebook --generate-config \
-&&  sed -i -e "s/#c.NotebookApp.pylab = 'disabled'/c.NotebookApp.pylab = 'disabled'/" \
-		  /home/${USER}/.jupyter/jupyter_notebook_config.py \
-&&  sed -i -e "s/#c.NotebookApp.ip = 'localhost'/c.NotebookApp.ip = '${UBUNTU_CONTAINER_NAME}'/" \
-		  /home/${USER}/.jupyter/jupyter_notebook_config.py \
-&&  sed -i -e "s/#c.NotebookApp.token = '<generated>'/c.NotebookApp.token = ''/" \
-		  /home/${USER}/.jupyter/jupyter_notebook_config.py \
-&&  sed -i -e "s/#c.NotebookApp.notebook_dir = ''/c.NotebookApp.notebook_dir = '\/home\/amano\/tokyo2020+1'/" \
-		  /home/${USER}/.jupyter/jupyter_notebook_config.py \
-&&  chmod -R 777 /home/amano/.jupyter 
+#jumannp
+RUN wget http://lotus.kuee.kyoto-u.ac.jp/nl-resource/jumanpp/jumanpp-1.02.tar.xz
+RUN tar xJvf jumanpp-1.02.tar.xz
+RUN cd ./jumanpp-1.02 &&\
+./configure && \
+make && \
+make install
+
+RUN touch /etc/ld.so.conf
+RUN echo include /usr/local/lib > /etc/ld.so.conf
+RUN ldconfig
+
+#pyknp
+RUN wget http://nlp.ist.i.kyoto-u.ac.jp/nl-resource/knp/pyknp-0.3.tar.gz
+RUN tar -zxvf pyknp-0.3.tar.gz
+#RUN cd pyknp-03 \
+#	&& python setup.py install
+RUN rm -rf pyknp-0.3.tar.gz juman-7.01.tar.xz
+
+#SVM_perf
+RUN wget http://download.joachims.org/svm_perf/current/svm_perf.tar.gz
+RUN mkdir svm_perf
+RUN tar zxvf svm_perf.tar.gz -C svm_perf
+RUN cd svm_perf \
+	&& make \
+	&& cp svm_perf_classify /usr/local/bin \
+	&& cp svm_perf_learn /usr/local/bin
+
 ## zsh
 COPY .zshrc ${HOME}
 

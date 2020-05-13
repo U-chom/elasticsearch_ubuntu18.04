@@ -104,3 +104,8 @@ print(es.indices.exists(index="aa"))
 python3 test.py
 ```
 で実行する。Falseが帰ってくれば成功しているはず。
+
+
+天野.verからの追加点
+自然言語処理、形態素解析ツール Jumanppa 及び pyknpを追加しています。
+また、二値分類器SVMの一種である、SVM_perfを追加しています。
