@@ -1,3 +1,4 @@
+#ES7.3.2用
 import sklearn
 # import pandas as pd
 import numpy as np
@@ -9,11 +10,10 @@ from elasticsearch import Elasticsearch, helpers
 import time
 #大規模なデータではdifferent_wordsとBoWはelasticsearchに載せるべき
 
-es = Elasticsearch()
+es = Elasticsearch("elasticsearch")
 
 mapping = {
     "mappings": {
-           "my_type": {
             "properties": {
                 "name": {
                     "type": "keyword"
@@ -27,7 +27,6 @@ mapping = {
             }
         }
     }
-}
 
 
 es.indices.delete('svm')
@@ -37,7 +36,7 @@ if False == ex:
     print("indexを新規作成しました。")
 
 def Data_load():
-    with open("./A5.txt") as A:
+    with open("./A1.txt") as A:
         docs = A.readlines()
         docs.pop(0)
     return docs
@@ -48,7 +47,7 @@ def put_data(name,num,sw):
         print(f"{name}をindexに追加します。onehotベクトルは{num}です。")
         body = {"name": name,"num" :num} 
         es.index(index="svm",id=num,body=body)
-        time.sleep(1)
+        time.sleep(1.5)
         if searcher("name",name,1) == 0:
             print("追加失敗")
         elif searcher("name",name,1) == 1:
@@ -61,7 +60,7 @@ def put_data(name,num,sw):
         es.delete(index="svm",id=name)#項目削除
         body = {"name": name_org,"num": name,"svm_score": num}
         es.index(index="svm",id=name,body=body)#項目再生成
-        time.sleep(1)
+        time.sleep(1.5)
         if searcher("name",name_org,4) == num:
             print("追加成功")
         else:
@@ -70,8 +69,8 @@ def put_data(name,num,sw):
 def searcher(keyname,key,step):
     if step == 1:
         result = es.search(index='svm',body={"query": {"term": {keyname: key}}})
-        hit_count = result['hits']['total']
-        if hit_count > 1:
+        hit_count = result['hits']['total']['value']
+        if (hit_count) > 1:
             print("警告:登録項目に重複が見られます。")
         return hit_count
     elif step == 2:#引数は"name"とその値
@@ -305,9 +304,14 @@ def therd():
                 print(f"{n} : {m}",end="\n",file=f)
                 i = i + 1
         print(i)
+
+def fourth():
+    pass
+
 first()
 second()
 therd()
+fourth()
 
 
 # #全件数検索
