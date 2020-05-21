@@ -29,7 +29,7 @@ mapping = {
     }
 
 
-es.indices.delete('svm')
+# es.indices.delete('svm')
 ex = es.indices.exists(index="svm")
 if False == ex:
     es.indices.create(index='svm', body = mapping)
@@ -185,8 +185,22 @@ def SVM_perf(sw,j):
             classify = ['svm_perf_classify','out/test/test_cv'+str(j)+'.dat','out/model/model_cv'+str(j)+'.dat','out/predictions/predictions_cv'+str(j)+'']#分類
             Classify = subprocess.run(classify, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             print(Classify.stdout.decode("utf8"),file=to)
-            print(Classify.stderr.decode("utf8"),file=to) 
-    
+            print(Classify.stderr.decode("utf8"),file=to)
+
+def SVM_perf_FS(test,num):
+    with open("out/FS/learn_out_FS"+str(num)+".txt","w",encoding='utf-8') as lo:
+        print("-------------------------------全学習--------------------------------")
+        command = ['svm_perf_learn','-c','20.0','out/FS/learn/learn_FS'+str(num)+'.dat','out/FS/model/model_FS'+str(num)+'.dat']#学習
+        Learn = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(Learn.stdout.decode("utf8"),file=lo)
+        print(Learn.stderr.decode("utf8"),file=lo)
+        
+    with open("out/FS/test_out_FS"+str(num)+".txt","w",encoding='utf-8') as to:
+        print("--------------------------------分類--------------------------------")
+        classify = ['svm_perf_classify',test,'out/FS/model/model_FS'+str(num)+'.dat','out/FS/predictions/predictions_FS'+str(num)+'']#分類
+        Classify = subprocess.run(classify, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(Classify.stdout.decode("utf8"),file=to)
+        print(Classify.stderr.decode("utf8"),file=to) 
 
 def validation_split(BoW,label):
     from sklearn.model_selection import KFold
@@ -232,14 +246,11 @@ def feature_selection():
     pass
 
 def make_dir():
-    try:
-        subprocess.run("mkdir","out")
-        subprocess.run("mkdir","out/learn")
-        subprocess.run("mkdir","out/model")
-        subprocess.run("mkdir","out/test")
-        subprocess.run("mkdir","out/predictions")
-    except:
-        pass
+    subprocess.run(["mkdir","out"])
+    subprocess.run(["mkdir","out/learn"])
+    subprocess.run(["mkdir","out/model"])
+    subprocess.run(["mkdir","out/test"])
+    subprocess.run(["mkdir","out/predictions"])
 
 def first():
     sw = 1#1：頻度なし、2：頻度あり
@@ -295,23 +306,86 @@ def therd():
         model_list.append(float(mm[1]))
     print(len(model_list))
     model_list = list(set(model_list))
-    model_list.sort(reverse=True)
-    with open("./out/svm_score","w",encoding="utf-8") as f:
+    Abs_model_list = sorted(model_list, key=lambda x: x * (1 if x > 0 else -1), reverse=True)
+    # Abs_model_list = sorted(model_list,key=abs)
+    with open("./out/abs_score","w",encoding="utf-8") as f:
         i = 0
-        for m in model_list:
+        for m in Abs_model_list:
+            print(type(m))
             Ans = searcher("svm_score",str(m),5)
             for n in Ans:
                 print(f"{n} : {m}",end="\n",file=f)
                 i = i + 1
         print(i)
+    model_list.sort(reverse=True)
+    with open("./out/svm_score","w",encoding="utf-8") as f2:
+        i = 0
+        for m in model_list:
+            Ans = searcher("svm_score",str(m),5)
+            for n in Ans:
+                print(f"{n} : {m}",end="\n",file=f2)
+                i = i + 1
+        print(i)
+    return acc
 
-def fourth():
-    pass
+def fourth(acc_t,acc_l):#abs_scoreが絶対値ではない問題
+    subprocess.run(["rm","-rf","./out/FS"])
+    subprocess.run(["mkdir","./out/FS"])
+    subprocess.run(["mkdir","./out/FS/learn"])
+    subprocess.run(["mkdir","./out/FS/model"])
+    subprocess.run(["mkdir","./out/FS/test"])
+    subprocess.run(["mkdir","./out/FS/predictions"])
+    FS = [1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100,200,300,400,500,600,700,800,900,1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]
+    with open("./out/abs_score",encoding="utf-8") as score:
+        score_list = score.readlines()
+    for i in FS[:]:
+        if i <= len(score_list):
+            continue
+        else:
+            FS.remove(i)
+    FS.append(len(score_list))
+    with open(acc_l,encoding="utf-8") as org:
+        org_li = org.read()
+        org_l = org_li.split("\n")
+        org_l.pop()
+        # print(len(org_l))
+    for org_line in org_l:#1行ごとに見る。
+        org_split = org_line.split(" ")
+        for lim in FS:#FSの数
+            with open("./out/FS/learn/learn_FS"+str(lim)+".dat","a",encoding="utf-8") as FSfile:
+                new_list = []
+                for j in range(lim):#FSループ
+                    ES_key = score_list[j].split(" : ")#れて : 4.3368087e-18
+                    num = searcher("name",ES_key[0],2)
+                    num_1 = f"{num}:1"
+                    if num_1 in org_split:
+                        new_list.append(num_1)
+                for i,m in enumerate(new_list):#:1を外してソート
+                    m = m.replace(":1","")
+                    new_list[i] = int(m)
+                new_list.sort()
+                for i,m in enumerate(new_list):
+                    m = f"{m}:1"
+                    new_list[i] = m
+                new_list.insert(0,org_split[0])
+                new_str = " ".join(new_list)
+                print(new_str,end="\n",file=FSfile)
+    for lim in FS:
+        SVM_perf_FS(acc_t,lim)
 
-first()
-second()
-therd()
-fourth()
+#ToDo
+# FSは+ - 1つずつ持ってくる
+
+# first()
+# second()
+acc = therd()
+acc = acc.replace("./out/test_out_cv","")
+acc = acc.replace(".txt","")
+acc_t = f"./out/test/test_cv{acc}.dat"
+acc_l = f"./out/learn/learn_cv{acc}.dat"
+print(acc_t,acc_l)
+fourth(acc_t,acc_l)
+
 
 
 # #全件数検索
