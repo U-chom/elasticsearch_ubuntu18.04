@@ -38,7 +38,7 @@ docker-compose version 1.24.1, build 4667896b
 ## 使い方
 まず、ダウンロード
 ```bash 
-git clone https://github.com/Amano123/elasticsearch_ubuntu18.04.git
+git clone https://github.com/U-chom/elasticsearch_ubuntu18.04.git
 ```
 
 ダウンロードしたフォルダに入ってから
