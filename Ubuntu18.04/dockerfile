@@ -28,6 +28,7 @@ RUN set -x \
 		wget \
 		curl \
 		build-essential \
+		cmake \
 		gcc \
 		libboost-dev \
                 ## python3 
@@ -65,12 +66,13 @@ RUN set -x \
 &&  rm -rf /library.txt
 
 #jumannp
-RUN wget http://lotus.kuee.kyoto-u.ac.jp/nl-resource/jumanpp/jumanpp-1.02.tar.xz \
-&& tar xJvf jumanpp-1.02.tar.xz \
-&& cd ./jumanpp-1.02 \
-&& ./configure \
-&& make \
-&& make install
+RUN wget https://github.com/ku-nlp/jumanpp/releases/download/v2.0.0-rc2/jumanpp-2.0.0-rc2.tar.xz \
+&& tar xf jumanpp-2.0.0-rc2.tar.xz \
+&& cd ./jumanpp-2.0.0-rc2 \
+&& mkdir bld \
+&& cd bld \
+&& cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./Juman++ \
+&& make install -j
 
 RUN touch /etc/ld.so.conf \
 && echo include /usr/local/lib > /etc/ld.so.conf \
