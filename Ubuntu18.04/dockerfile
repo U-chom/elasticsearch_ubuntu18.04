@@ -62,7 +62,6 @@ RUN set -x \
 &&  python3 -m pip --no-cache-dir install --upgrade pip \
 &&  pip3 --no-cache-dir install -I setuptools \
 &&  python3 -m pip --no-cache-dir install --upgrade tensorflow nodejs elasticsearch six sklearn \
-&&  python3 -m pip install pyknp \
 &&  pip3 --no-cache-dir install -Ir /library.txt \
 &&  rm -rf /library.txt
 
@@ -74,7 +73,8 @@ RUN wget https://github.com/ku-nlp/jumanpp/releases/download/v2.0.0-rc2/jumanpp-
 && cd bld \
 && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local \
 && make \
-&& make install -j
+&& make install -j \\
+&& python3 -m pip install pyknp
 
 RUN touch /etc/ld.so.conf \
 && echo include /usr/local/lib > /etc/ld.so.conf \
