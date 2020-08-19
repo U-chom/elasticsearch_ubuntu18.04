@@ -61,7 +61,8 @@ RUN set -x \
 # Pythonのライブラリ追加
 &&  python3 -m pip --no-cache-dir install --upgrade pip \
 &&  pip3 --no-cache-dir install -I setuptools \
-&&  python3 -m pip --no-cache-dir install --upgrade tensorflow nodejs elasticsearch six pyknp sklearn \
+&&  python3 -m pip --no-cache-dir install --upgrade tensorflow nodejs elasticsearch six sklearn \
+&&  python3 -m pip install pyknp \
 &&  pip3 --no-cache-dir install -Ir /library.txt \
 &&  rm -rf /library.txt
 
@@ -77,13 +78,6 @@ RUN wget https://github.com/ku-nlp/jumanpp/releases/download/v2.0.0-rc2/jumanpp-
 RUN touch /etc/ld.so.conf \
 && echo include /usr/local/lib > /etc/ld.so.conf \
 && ldconfig
-
-#pyknp
-RUN wget http://nlp.ist.i.kyoto-u.ac.jp/nl-resource/knp/pyknp-0.3.tar.gz \
-&& tar -zxvf pyknp-0.3.tar.gz \
-#RUN cd pyknp-03 \
-#	&& python setup.py install
-&& rm -rf pyknp-0.3.tar.gz juman-7.01.tar.xz
 
 #SVM_perf
 RUN wget http://download.joachims.org/svm_perf/current/svm_perf.tar.gz \ 
